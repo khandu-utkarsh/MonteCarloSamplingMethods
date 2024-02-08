@@ -1,0 +1,297 @@
+\documentclass[11pt]{article}
+
+\renewcommand*\familydefault{\sfdefault}
+%%
+%% to get Arial font as the sans serif font, uncomment following line:
+%% \renewcommand{\sfdefault}{phv} % phv is the Arial font
+\usepackage[sort,nocompress]{cite}
+\usepackage[small,bf,up]{caption}
+\renewcommand{\captionfont}{\footnotesize}
+\usepackage[left=1in,right=1in,top=1in,bottom=1in]{geometry}
+\usepackage{graphics,epsfig,graphicx,float,color}
+\usepackage{latexsym,amsmath,amsthm,amssymb,epsfig,float, array}
+%\usepackage{algorithm,algorithmic}
+\usepackage{amsmath,amssymb,amsbsy,amsfonts,amsthm}
+\usepackage{url}
+\usepackage{boxedminipage}
+\usepackage[sf,bf,tiny]{titlesec}
+\usepackage[plainpages=false, colorlinks=true, citecolor=blue, filecolor=blue, linkcolor=blue, urlcolor=blue]{hyperref}
+
+\usepackage{algorithmicx}
+\usepackage{dsfont}
+\usepackage{listings}
+\usepackage{xspace}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{sidecap}
+\usepackage{caption}
+\usepackage[numbered,framed]{matlab-prettifier}
+\usepackage{pythonhighlight}
+\usepackage{dsfont}
+\usepackage{multirow}
+\usepackage{tikz}
+
+\usepackage{bm}
+\newcommand{\uvec}[1]{\boldsymbol{\hat{\textbf{#1}}}}
+
+\usepackage{subcaption}
+
+\usepackage{graphics,epsfig,graphicx,float,color}
+\usepackage[labelformat=parens,labelsep=quad,skip=3pt]{caption}
+\usepackage{graphicx}
+
+\lstset{
+basicstyle=\small\ttfamily,
+numbers=left,
+numbersep=5pt,
+xleftmargin=20pt,
+frame=tb,
+framexleftmargin=20pt
+}
+
+\renewcommand*\thelstnumber{\arabic{lstnumber}:}
+
+\DeclareCaptionFormat{mylst}{\hrule#1#2#3}
+\captionsetup[lstlisting]{format=mylst,labelfont=bf,singlelinecheck=off,labelsep=space}
+
+\usepackage{matlab-prettifier}
+\newcommand{\todo}[1]{\textcolor{red}{#1}}
+% see documentation for titlesec package
+% \titleformat{\section}{\large \sffamily \bfseries}
+\titlelabel{\thetitle.\,\,\,}
+
+\renewcommand{\baselinestretch}{0.994}
+\newcommand{\bs}{\boldsymbol}
+\newcommand{\alert}[1]{\textcolor{red}{#1}}
+
+\setlength{\emergencystretch}{20pt}
+
+\begin{document}
+
+%\vspace*{.5cm}
+\begin{center}
+\large \textbf{%%
+Fall 2022: Monte Carlo Methods}\\
+\textbf{ Homework 5 }
+\end{center}
+\begin{center}
+{\textbf{NAME:} Utkarsh Khandelwal\\}
+{\textbf{Net Id:} uk2051}
+\end{center}
+
+
+% ---------------------------------------------------------------
+\noindent We are given a 2-dimensional set of vectors $\overrightarrow{\sigma_{i}} \in R^2$ indexed by 1 dimensional periodic lattice $Z_L$
+and with $||\overrightarrow{\sigma_i}||_2 = 1$. The nearest neighbor XY model of statistical physics assigns these vectors the density
+$$\pi(\overrightarrow{\sigma}) = \frac{ \exp{\left( \beta \sum_{{i \leftrightarrow j}} \sigma_{\overrightarrow{i}} \sigma_{\overrightarrow{j}}\right)} }     {Z}$$
+
+The above expression can also be simplified and written As
+$$\pi(\overrightarrow{\theta}) = \frac{ \exp{\left( \beta \sum_{i \leftrightarrow j} \cos(\theta_i - \theta_j) \right)} }     {Z}$$
+Here, $\theta$ is a scaler following the given density.
+
+We have been asked to compute the consine of the angle of magnetization vector. Magnetization is defined as
+$$M(\overrightarrow{\sigma}) = \sum_{i = 0}^{L - 1} \overrightarrow{\sigma_i}$$
+Therefore cosine of angle of magnetization is
+$$f(\overrightarrow{\sigma}) = \frac{(\overrightarrow{\sigma})_x }{(||\overrightarrow{\sigma})||}$$
+
+In terms of angle this will be written as
+$$M(\overrightarrow{\theta}) = \sum_{i = 0}^{L - 1} \cos{\theta_i} \uvec{\i} + \sin{\theta_i} \uvec{\j}$$
+
+Therefore cosine of angle of magnetization in terms of theta is
+$$f(\overrightarrow{\theta}) = \cos \left(
+							\arctan \left( 
+								\frac{ \sum_{i = 0}^{L - 1} \sin{\theta_i}} {\sum_{i = 0}^{L - 1} \cos{\theta_i}} 
+								\right) \right)$$
+
+\noindent \textbf{Exercise 64} asked to implement an Overdamped Langevian MCMC Secheme for both with and without metropolization step.
+$$
+\theta_h^{k + 1} = \theta_h^{k} + h S(\theta_h^{k}) \nabla^T \log \pi(\theta_h^{k}) + h \text{div} S(\theta_h^{k}) + \sqrt{2 h S(\theta_h^{k})} \zeta^{k + 1}
+$$
+So on choosing $S(\theta) = \textbf{I}$ (Identity Matrix), above equation can be simplified into
+$$
+\theta_h^{k + 1} = \theta_h^{k} + h \nabla^T \log \pi(\theta_h^{k}) + h \text{div} \textbf{I} + \sqrt{2 h} \textbf{I} \zeta^{k + 1}
+$$
+Since, divergence of a constanct is $0$, it can be further simplified into
+$$
+\theta_h^{k + 1} = \theta_h^{k} + h \nabla^T \log \pi(\theta_h^{k}) + \sqrt{2 h} \textbf{I} \zeta^{k + 1}
+$$
+Here, $\zeta$ are generated using Multivarite Gaussian Distribution with Covariance as $Identity Matrix$
+
+On using this equation to generate the samples from distribution $\pi$ and plotting the histogram we are getting
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.40\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Histogram_Overdamped_notM_h_0d125_Samples_760000_beta_0d2_L_5.png}
+		\caption{Without Metropolization}
+	\end{subfigure}
+	\begin{subfigure}{.40\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Histogram_Overdamped_M_h_0d125_Samples_760000_beta_0d2_L_5.png}
+		\caption{With Metropolization}
+	\end{subfigure}
+	\caption{Histograms for magnetization samples generated for Overdamped Langevian MCMC Schemes}
+	\label{fig:histograms_odlv}
+\end{figure}
+Looking, at the histogram we can validate the implementation as the the cosine of magnetization should either transitioing between $+1$ and $-1$ with almost equal probability. And
+we can see that maximum sampled points are lying at the two ends of the histogram.
+
+We can compare the quality of the samples with the IAT value of the cosine angle of magnetization. Since IAT are notoriously hard to accurately compute, I ran independent simulations on M parallel chains, with other parameters as constant.
+And after computing IAT, took a mean of them.
+
+From figure \ref{fig:iat_plots_q64} it we can conclude the following
+\begin{itemize}
+	\item As we decrease the value of $h$ by a factor of $2$ meant value of the IAT also increases by the same factor of $2$. 
+	From the above figure we can see that $h$ decreases from $0.5$ to $0.25$ to $0.125$ the IATs for both wit and without metropolization incases in the same proportion.
+	\item IAT of Overdamped Langevian with metropolization is more than the IAT without metropolization. This is because 
+	of the  accept reject step in metropolization method.
+	\item Due to smaller size of lattice, IAT converges even for samller sample count.
+	\item There is not much of the difference in the IAT values with the variation in $L$. So we could infer that L is independent of the cosine of magnetization.
+\end{itemize}
+
+
+\begin{figure}[H]
+	\centering
+
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Overdamped_Mean_IAT__h_0d5_L5.png}
+		\caption{$h = 0.5$ and $L = 5$}
+	\end{subfigure}
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Overdamped_Mean_IAT__h_0d25_L5.png}
+		\caption{$h = 0.25$ and $L = 5$}
+	\end{subfigure}
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Overdamped_Mean_IAT__h_0d125_L5.png}
+		\caption{$h = 0.125$ and $L = 5$}
+	\end{subfigure}
+
+
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Overdamped_Mean_IAT__h_0d5_L10.png}
+		\caption{$h = 0.5$ and $L = 10$}
+	\end{subfigure}
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Overdamped_Mean_IAT__h_0d25_L10.png}
+		\caption{$h = 0.25$ and $L = 10$}
+	\end{subfigure}
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Overdamped_Mean_IAT__h_0d125_L10.png}
+		\caption{$h = 0.125$ and $L = 10$}
+	\end{subfigure}
+
+	
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Overdamped_Mean_IAT__h_0d5_L15.png}
+		\caption{$h = 0.5$ and $L = 15$}
+	\end{subfigure}
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Overdamped_Mean_IAT__h_0d25_L15.png}
+		\caption{$h = 0.25$ and $L = 15$}
+	\end{subfigure}
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Overdamped_Mean_IAT__h_0d125_L15.png}
+		\caption{$h = 0.125$ and $L = 15$}
+	\end{subfigure}
+	\caption{Plots of IAT with samples generated for Overdamped Langevian MCMC for both with and without metropolization for different values of $h$ and $L$}
+	\label{fig:iat_plots_q64}
+\end{figure}
+
+
+
+\noindent \textbf{Exercise 65} asked to implement an Hybrid Monte Carlo Scheme for both with and without metropolization step using Equation (5.26) and Algorithm 4
+from the notes.
+
+Following are the expressions chosen for solving Velocity Verlet Scheme
+$$\hat{d} = L \text{   and     } \tilde{d} = L$$
+$$J(\hat{x}) = \textbf{I}_{\hat{d} \text{x} \hat{d}}$$
+$$K(\tilde{x}) = \frac{||\tilde{x}|^2_2}{2}$$
+$$n = 10$$
+Figure \ref{fig:histograms_q65} contains the histogram of the generated samples.
+
+On using this equation to generate the samples from distribution $\pi$ and plotting the histogram we are getting
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.40\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Histogram_Hybrid_notM_h_0d125_Samples_800000_beta_0d2_L_10.png}
+		\caption{Without Metropolization}
+	\end{subfigure}
+	\begin{subfigure}{.40\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Histogram_Hybrid_M_h_0d125_Samples_800000_beta_0d2_L_10.png}
+		\caption{With Metropolization}
+	\end{subfigure}
+	\caption{Histograms for magnetization samples generated for Overdamped Langevian MCMC Schemes}
+	\label{fig:histograms_q65}
+\end{figure}
+
+Now, while measuring the IAT we need to take care of multiplication by the factor of $n$, since for generating $1$ sample we generated $n$ points using Velocity Verlet and this was taken into accounting.
+\ref{fig:iat_plots_q65} contains the plots of IATs for different value of h.
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Hybrid_Mean_IAT__h_0d5.png}
+		\caption{$h = 0.5$ and $L = 10$}
+	\end{subfigure}
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Hybrid_Mean_IAT__h_0d25.png}
+		\caption{$h = 0.25$ and $L = 10$}
+	\end{subfigure}
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Hybrid_Mean_IAT__h_0d125.png}
+		\caption{$h = 0.125$ and $L = 15$}
+	\end{subfigure}
+	\caption{Plots of IAT with samples generated for Hybrid Monte Carlo for both with and without metropolization for different values of $h$}
+	\label{fig:iat_plots_q65}
+\end{figure}
+
+
+From figure \ref{fig:iat_plots_q65}, we can conclude the following
+\begin{itemize}
+	\item We don't observe much difference between the IAT values for both with and without Metropolization.
+	\item On decreasing the value of $h$ we observe that the value of $IAT$ are increasing.
+	\item Due to smaller size of lattice, IAT converges even for samller sample count.
+\end{itemize}
+
+On comparing the figure \ref{fig:iat_plots_q64} and \ref{fig:iat_plots_q65} we can compare Overdamped Langevian MC Schemes as well as Hybrid MC Schemes. Below are the comparision observations:
+\begin{itemize}
+	\item In overdamped scheme there is huge difference with and without metropolization while in hybrid scheme we get almost same results with both the metropolization and without metropolization.
+	\item In overdamped scheme decrease in the value of $h$ by some factor increased the value of IAT by same factor. Whereas in the hybrid sceme with observe the increase but not by the same factor.
+\end{itemize}
+
+\noindent \textbf{Exercise 66} asked us to implement Underdamped Langevian Monte Carlo
+Following are the expresions used various factors and matrices.
+$$\hat{d} = L \text{   and     } \tilde{d} = L$$
+$$J(\hat{x}) = \textbf{I}_{\hat{d} \text{x} \hat{d}}$$
+$$K(\tilde{x}) = \frac{||\tilde{x}|^2_2}{2}$$
+$$H(\hat{x}, \tilde{x}) = - \log \pi(\hat{x}) + K(\tilde{x})$$
+
+\noindent Implementation of the code was validated using the same mechanism of generating samples and plotting the histogram. It was similar in
+shape as previous two parts, hence the code was validated.
+
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.45\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Underdamped_Mean_IAT__h_0d5.png}
+		\caption{$h = 0.5$ and $L = 10$}
+	\end{subfigure}
+	\begin{subfigure}{.45\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Underdamped_Mean_IAT__h_0d25.png}
+		\caption{$h = 0.25$ and $L = 10$}
+	\end{subfigure}
+	\begin{subfigure}{.45\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework5/LatexReport/Underdamped_Mean_IAT__h_0d125.png}
+		\caption{$h = 0.125$ and $L = 15$}
+	\end{subfigure}
+	\caption{Plots of IAT with samples generated for Hybrid Monte Carlo for both with and without metropolization for different values of $h$}
+	\label{fig:iat_plots_q66}
+\end{figure}
+
+
+From figure \ref{fig:iat_plots_q65}, we can conclude the following
+\begin{itemize}
+	\item On increasing the value of $\gamma$ we see the increase in the value of IAT.
+	\item Only reducing the value of h some factor, the value of IAT multiples by the same factor
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,352 @@
+\documentclass[11pt]{article}
+
+\renewcommand*\familydefault{\sfdefault}
+%%
+%% to get Arial font as the sans serif font, uncomment following line:
+%% \renewcommand{\sfdefault}{phv} % phv is the Arial font
+\usepackage[sort,nocompress]{cite}
+\usepackage[small,bf,up]{caption}
+\renewcommand{\captionfont}{\footnotesize}
+\usepackage[left=1in,right=1in,top=1in,bottom=1in]{geometry}
+\usepackage{graphics,epsfig,graphicx,float,color}
+\usepackage{latexsym,amsmath,amsthm,amssymb,epsfig,float, array}
+%\usepackage{algorithm,algorithmic}
+\usepackage{amsmath,amssymb,amsbsy,amsfonts,amsthm}
+\usepackage{url}
+\usepackage{boxedminipage}
+\usepackage[sf,bf,tiny]{titlesec}
+\usepackage[plainpages=false, colorlinks=true, citecolor=blue, filecolor=blue, linkcolor=blue, urlcolor=blue]{hyperref}
+
+\usepackage{algorithmicx}
+\usepackage{dsfont}
+\usepackage{listings}
+\usepackage{xspace}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{sidecap}
+\usepackage{caption}
+\usepackage[numbered,framed]{matlab-prettifier}
+\usepackage{pythonhighlight}
+\usepackage{dsfont}
+\usepackage{multirow}
+\usepackage{tikz}
+
+\usepackage{bm}
+\newcommand{\uvec}[1]{\boldsymbol{\hat{\textbf{#1}}}}
+
+\usepackage{subcaption}
+
+\usepackage{graphics,epsfig,graphicx,float,color}
+\usepackage[labelformat=parens,labelsep=quad,skip=3pt]{caption}
+\usepackage{graphicx}
+
+\lstset{
+basicstyle=\small\ttfamily,
+numbers=left,
+numbersep=5pt,
+xleftmargin=20pt,
+frame=tb,
+framexleftmargin=20pt
+}
+
+\renewcommand*\thelstnumber{\arabic{lstnumber}:}
+
+\DeclareCaptionFormat{mylst}{\hrule#1#2#3}
+\captionsetup[lstlisting]{format=mylst,labelfont=bf,singlelinecheck=off,labelsep=space}
+
+\usepackage{matlab-prettifier}
+\newcommand{\todo}[1]{\textcolor{red}{#1}}
+% see documentation for titlesec package
+% \titleformat{\section}{\large \sffamily \bfseries}
+\titlelabel{\thetitle.\,\,\,}
+
+\renewcommand{\baselinestretch}{0.994}
+\newcommand{\bs}{\boldsymbol}
+\newcommand{\alert}[1]{\textcolor{red}{#1}}
+
+\setlength{\emergencystretch}{20pt}
+
+\begin{document}
+
+%\vspace*{.5cm}
+\begin{center}
+\large \textbf{%%
+Fall 2022: Monte Carlo Methods}\\
+\textbf{ Homework 6 }
+\end{center}
+\begin{center}
+{\textbf{NAME:} Utkarsh Khandelwal\\}
+{\textbf{Net Id:} uk2051}
+\end{center}
+
+
+% ---------------------------------------------------------------
+\noindent \textbf{Exercise 71} and \textbf{Exercise 75} asked us to generate samples from Rosenbrock density.
+$$\pi(x) \propto \exp \left(- \frac{100 (x_2 - x_1^2){^2}  + (1 - x_1)^2}{20} \right)$$
+
+In \textbf{Exercise 71} we are asked to generated samples using the Stocastic Newton Method and Overdamped Langevin Scheme.
+While solving the equation
+$$
+X_h^{k + 1} = X_h^{k} + h S(X_h^{k}) \nabla^T \log \pi(X_h^{k}) + h \text{div} S(X_h^{k}) + \sqrt{2 h S(X_h^{k})} \zeta^{k + 1}
+$$
+
+This algorithm was implemented such that when method was passed as newton, 
+$$S = -(D^2 \log \pi(x))^{-1}$$
+
+While soving for $S$ analytically, a region was found where Hessian was not invertible. So, calculation of S was modified to
+$$S = -(D^2 \log \pi(x) + \eta * I)^{-1}$$
+Here, $\eta$ is samll scaler in order to facilitate inversion and $I$ is the identity matrix.
+
+Also, since matrix $S$ is the function of $x_1$ and $x_2$, care was taken while writing metropolization step.
+Therefore proposal distribution was selected as
+$$q(y |x ) = \exp\left(- \frac{ (y - x - hS(x)\nabla^T \log \pi (x) )^T S(x)^{-1} (y - x - hS(x)\nabla^T \log \pi (x) ) } {4h} \right)$$
+
+For the measure of performance, quantity of measure that was chosen was $x_1$. So IAT was measured for the same. Total samples generated were 2million points.
+
+
+Implementating these following are the reuslts obtained for Overdamped Stocastic Newton Scheme
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/ScatterPlotOf_StochasticNewton.png}
+		\caption{Scatter Plot of Generated Samples}
+		\label{fig:ovsns_scatter}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/IAT_StochasticNewton.png}
+		\caption{Plot of IAT vs Grenerated Samples Count}
+		\label{fig:ovsns_iat}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/TimeSeries_x1_StochasticNewton.png}
+		\caption{Time series of $x_1$}
+		\label{fig:ovsns_time_x1}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/TimeSeries_x2_StochasticNewton.png}
+		\caption{Time series of $x_2$}
+		\label{fig:ovsns_time_x2}
+	\end{subfigure}
+	\caption{Plots generated for Overdamped Stocastic Newton Scheme}
+	\label{fig:ovsns_plots}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/ScatterPlotOf_OverdampedLangevin.png}
+		\caption{Scatter Plot of Generated Samples}
+		\label{fig:ols_scatter}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/IAT_OverdampedLangevin.png}
+		\caption{Plot of IAT vs Grenerated Samples Count}
+		\label{fig:ols_iat}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/TimeSeries_x1_OverdampedLangevin.png}
+		\caption{Time series of $x_1$}
+		\label{fig:ols_time_x1}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/TimeSeries_x2_OverdampedLangevin.png}
+		\caption{Time series of $x_2$}
+		\label{fig:ols_time_x2}
+	\end{subfigure}
+	\caption{Plots generated for Overdamped Stocastic Newton Scheme with $S = I$}
+	\label{fig:ols_plots}
+\end{figure}
+
+Following are the observations that could be made from \ref{fig:ovsns_plots} and \ref{fig:ols_plots}
+\begin{enumerate}
+	\item As we are already aware of contours for Rosenbrock Function, we can easity infer that these scatter plots are far from true values. For \ref{fig:ovsns_scatter} 
+	Markov Chain have explored smaller regioin of the $x_1$ coordiante axis.
+	\item Those it's IAT looks converging but the reason is that in that region it deosn't know much about the Banana Shape of the density.
+	\item While looking at the scatter plot of \ref{fig:ols_scatter}, generated points are having lot of noise in them but they do have covered a larger region in space.
+	\item We can infer that if we increasing the generated samples count, Stochastic Newton would perform better becuase of less noise being generated than the Overdamped Langevin Scheme
+\end{enumerate}
+
+
+\textbf{Exercise 75} asked us to implemented the Ensemble Monte Carlo and compare its performace for various values of $\alpha$. I experimented with values of $\alpha  = \{1.5, 2, 2.5, 3\}$
+For all the below figures, number of markov chains are $L = 10$.
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/ScatterPlotOf_Ensemble_alpha1d5.png}
+		\caption{Scatter Plot of Generated Samples}
+		\label{fig:en_1.5_scatter}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/IAT_EnsembleScheme_alpha1d5.png}
+		\caption{Plot of IAT vs Grenerated Samples Count}
+		\label{fig:en_1.5_iat}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/TimeSeries_x1_EnsembleScheme_alpha1d5.png}
+		\caption{Time series of $x_1$}
+		\label{fig:en_1.5_time_x1}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/TimeSeries_x2_EnsembleScheme_alpha1d5.png}
+		\caption{Time series of $x_2$}
+		\label{fig:en_1.5_time_x2}
+	\end{subfigure}
+	\caption{Plots generated for Ensemble Scheme with $\alpha = 1.5$ and $L = 10$}
+	\label{fig:en_1.5_plots}
+\end{figure}
+
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/ScatterPlotOf_Ensemble_alpha2d0.png}
+		\caption{Scatter Plot of Generated Samples}
+		\label{fig:en_2_scatter}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/IAT_EnsembleScheme_alpha2d0.png}
+		\caption{Plot of IAT vs Grenerated Samples Count}
+		\label{fig:en_2_iat}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/TimeSeries_x1_EnsembleScheme_alpha2d0.png}
+		\caption{Time series of $x_1$}
+		\label{fig:en_2_time_x1}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/TimeSeries_x2_EnsembleScheme_alpha2d0.png}
+		\caption{Time series of $x_2$}
+		\label{fig:en_2_time_x2}
+	\end{subfigure}
+	\caption{Plots generated for Ensemble Scheme with $\alpha = 2$ and $L = 10$}
+	\label{fig:en_2_plots}
+\end{figure}
+
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/ScatterPlotOf_Ensemble_alpha2d5.png}
+		\caption{Scatter Plot of Generated Samples}
+		\label{fig:en_2.5_scatter}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/IAT_EnsembleScheme_alpha2d5.png}
+		\caption{Plot of IAT vs Grenerated Samples Count}
+		\label{fig:en_2.5_iat}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/TimeSeries_x1_EnsembleScheme_alpha2d5.png}
+		\caption{Time series of $x_1$}
+		\label{fig:en_2.5_time_x1}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/TimeSeries_x2_EnsembleScheme_alpha2d5.png}
+		\caption{Time series of $x_2$}
+		\label{fig:en_2.5_time_x2}
+	\end{subfigure}
+	\caption{Plots generated for Ensemble Scheme with $\alpha = 2.5$ and $L = 10$}
+	\label{fig:en_2.5_plots}
+\end{figure}
+
+
+
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/ScatterPlotOf_Ensemble_alpha3d0.png}
+		\caption{Scatter Plot of Generated Samples}
+		\label{fig:en_3_scatter}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/IAT_EnsembleScheme_alpha3d0.png}
+		\caption{Plot of IAT vs Grenerated Samples Count}
+		\label{fig:en_3_iat}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/TimeSeries_x1_EnsembleScheme_alpha3d0.png}
+		\caption{Time series of $x_1$}
+		\label{fig:en_3_time_x1}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/TimeSeries_x2_EnsembleScheme_alpha3d0.png}
+		\caption{Time series of $x_2$}
+		\label{fig:en_3_time_x2}
+	\end{subfigure}
+	\caption{Plots generated for Ensemble Scheme with $\alpha = 3$ and $L = 10$}
+	\label{fig:en_3_plots}
+\end{figure}
+
+
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/ScatterPlotOf_Ensemble_alpha1d5_20.png}
+		\caption{Scatter Plot of Generated Samples}
+		\label{fig:en_1.5_scatter_20}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/IAT_EnsembleScheme_alpha1d5_20.png}
+		\caption{Plot of IAT vs Grenerated Samples Count}
+		\label{fig:en_1.5_iat_20}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/TimeSeries_x1_EnsembleScheme_alpha1d5_20.png}
+		\caption{Time series of $x_1$}
+		\label{fig:en_1.5_time_x1_20}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/TimeSeries_x2_EnsembleScheme_alpha1d5_20.png}
+		\caption{Time series of $x_2$}
+		\label{fig:en_1.5_time_x2_20}
+	\end{subfigure}
+	\caption{Plots generated for Ensemble Scheme with $\alpha = 1.5$ and $L = 20$}
+	\label{fig:en_1.5_plots}
+\end{figure}
+
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/ScatterPlotOf_Ensemble_alpha2d0_20.png}
+		\caption{Scatter Plot of Generated Samples}
+		\label{fig:en_2_scatter_20}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/IAT_EnsembleScheme_alpha2d0_20.png}
+		\caption{Plot of IAT vs Grenerated Samples Count}
+		\label{fig:en_2_iat_20}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/TimeSeries_x1_EnsembleScheme_alpha2d0_20.png}
+		\caption{Time series of $x_1$}
+		\label{fig:en_2_time_x1_20}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework6/LatexReport/TimeSeries_x2_EnsembleScheme_alpha2d0_20.png}
+		\caption{Time series of $x_2$}
+		\label{fig:en_2_time_x2_20}
+	\end{subfigure}
+	\caption{Plots generated for Ensemble Scheme with $\alpha = 2$ and $L = 20$}
+	\label{fig:en_2_plots_20}
+\end{figure}
+
+
+Following are the observations that could be made from \ref{fig:en_1.5_plots}, \ref{fig:en_2_plots}, \ref{fig:en_2.5_plots}, \ref{fig:en_3_plots}
+\begin{enumerate}
+	\item Figure \ref{fig:en_2_scatter} shows the best generated plots for samples from the Rosenbrock density which is generate using $\alpha = 2$.
+	\item Figure \ref{fig:en_1.5_scatter}, for $\alpha = 1.5$ genrated points, have losts of noise in it. While figure \ref{fig:en_2.5_scatter}, for $\alpha = 2$ and figure \ref{fig:en_3_scatter}, for $\alpha = 3$ have generated
+	2 million samples in a very confined region. So it could be inferred that there is surely an optimal value of $\alpha$ for which the markov chain is able
+	entirely explore the region and in this case out of four choices, it is $2$.
+	\item On increasing the number of trajectories $L$ in Ensemble Methods, we can see from the plots \ref{fig:en_2_iat_20} and \ref{fig:en_2_iat} and from \ref{fig:en_1.5_iat_20} and \ref{fig:en_1.5_iat} that the IAT value decreases even for the same sample counts. So having more trajectories makes them iids quickly.
+	\item Ensemble Scheme is not only better in terms of reuslts (as evident from attached images), it is simpler to implement as well. We don't need a lot of information regarding the
+	differential equation governing the generation proces.
+	\item Ensemble Schemes are much faster as well because of no need to compute hessian. Working with Hessian is a complex task, lot of thinks have to be taken care of like checkign for Symmetry, positive definiteness, invertibility, etc.
+	Ensemble Scehems don't face such problems.
+\end{enumerate}
+
+Hence, we can easily conclude that Ensemble Method with $\alpha = 2$ is the best method for generating points from Rosenbrock Density.
+
+\end{document}

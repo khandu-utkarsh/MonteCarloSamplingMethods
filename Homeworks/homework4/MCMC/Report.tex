@@ -1,0 +1,1039 @@
+\documentclass[11pt]{article}
+
+ \renewcommand*\familydefault{\sfdefault}
+%%
+%% to get Arial font as the sans serif font, uncomment following line:
+%% \renewcommand{\sfdefault}{phv} % phv is the Arial font
+\usepackage[sort,nocompress]{cite}
+\usepackage[small,bf,up]{caption}
+\renewcommand{\captionfont}{\footnotesize}
+\usepackage[left=1in,right=1in,top=1in,bottom=1in]{geometry}
+\usepackage{graphics,epsfig,graphicx,float,color}
+\usepackage{latexsym,amsmath,amsthm,amssymb,epsfig,float, array}
+%\usepackage{algorithm,algorithmic}
+\usepackage{amsmath,amssymb,amsbsy,amsfonts,amsthm}
+\usepackage{url}
+\usepackage{boxedminipage}
+\usepackage[sf,bf,tiny]{titlesec}
+\usepackage[plainpages=false, colorlinks=true, citecolor=blue, filecolor=blue, linkcolor=blue, urlcolor=blue]{hyperref}
+
+\usepackage{algorithmicx}
+\usepackage{dsfont}
+\usepackage{listings}
+\usepackage{xspace}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{sidecap}
+\usepackage{caption}
+\usepackage[numbered,framed]{matlab-prettifier}
+\usepackage{pythonhighlight}
+\usepackage{dsfont}
+\usepackage{multirow}
+\usepackage{tikz}
+
+\usepackage{subcaption}
+
+\usepackage{graphics,epsfig,graphicx,float,color}
+\usepackage[labelformat=parens,labelsep=quad,skip=3pt]{caption}
+\usepackage{graphicx}
+
+\lstset{
+basicstyle=\small\ttfamily,
+numbers=left,
+numbersep=5pt,
+xleftmargin=20pt,
+frame=tb,
+framexleftmargin=20pt
+}
+
+\renewcommand*\thelstnumber{\arabic{lstnumber}:}
+
+\DeclareCaptionFormat{mylst}{\hrule#1#2#3}
+\captionsetup[lstlisting]{format=mylst,labelfont=bf,singlelinecheck=off,labelsep=space}
+
+\usepackage{matlab-prettifier}
+\newcommand{\todo}[1]{\textcolor{red}{#1}}
+% see documentation for titlesec package
+% \titleformat{\section}{\large \sffamily \bfseries}
+\titlelabel{\thetitle.\,\,\,}
+
+\renewcommand{\baselinestretch}{0.994}
+\newcommand{\bs}{\boldsymbol}
+\newcommand{\alert}[1]{\textcolor{red}{#1}}
+
+\setlength{\emergencystretch}{20pt}
+
+\begin{document}
+
+%\vspace*{.5cm}
+\begin{center}
+\large \textbf{%%
+Fall 2022: Monte Carlo Methods}\\
+\textbf{ Homework 4 }
+\end{center}
+\begin{center}
+{\textbf{NAME:} Utkarsh Khandelwal\\}
+{\textbf{Net Id:} uk2051}
+\end{center}
+
+
+% ---------------------------------------------------------------
+\noindent Exercises ask to write a Gibbs Sampler to generate samples of the Ising model and compute the magnetization.
+The distribution followed by spins are:
+$$
+\pi(\sigma) = \frac{ \exp{\left( \beta \sum_{{i \leftrightarrow j}} \sigma_{\overrightarrow{i}} \sigma_{\overrightarrow{j}}\right)} }     {Z}
+$$
+And magnetization here is defined as:
+$$
+f(\sigma) = \sum_{i \in Z^{L^2}} \sigma_{\overrightarrow{i}}
+$$
+
+\noindent \textbf{Exercise 39} asks to implement the Gibs Sampling Markov Chain Monte Carlo Algorithm while the \textbf{Exercie 41} asks to implement the Metropolis Hastings Markov Chain Monte Carlo Algorithm. I used two separate
+methods for creating the chain, one is determinisitc sweep to update spin in the lattice and other one is random selection of latice site for update in the Markov Chain.
+
+\begin{center}
+    \begin{tikzpicture}
+        \draw[step=1cm,black,very thin] (0,0) grid (5,5);
+    \end{tikzpicture}        
+\end{center}
+
+\noindent For the determinisitc sweep, lattice positions are selected from the latice orderly. Start from position $(0,0)$ then $(0,1)$ then $(0,2)$ till $(0,L)$ and then moving to next row $(1,0)$ and so on and so forth. While for randomly updating the spins,
+positions are selected based on a random number generated from $U(0, L^2)$. \\[12pt]
+\par
+
+\noindent \textbf{Below is the algorithm implemented for Gibbs Sampling of N samples}
+\begin{enumerate}
+    \item Initialie the lattice with spins chosen randomly from discrete values $\{1, -1\}$
+    \item Calculte the initial magnetization as $M_{0}$ and store it. Set $k = 1$
+    \item Now find the position to update the spin. Position could be selected determinisitcally or randomly. Let the position to be updated is $\overrightarrow{i_{t}}$
+    \item Store the old spin $\sigma_{o} = \overrightarrow{i_{t}}$. Now, compute $w_{+} = \frac{ \exp{\left( \beta \sum_{{\overrightarrow{i}} \leftrightarrow \overrightarrow{i_{t}}} \sigma_{\overrightarrow{i}} \right)} } { \exp{\left( \beta \sum_{{\overrightarrow{i}} \leftrightarrow \overrightarrow{i_{t}}} \sigma_{\overrightarrow{i}} \right)} +  \exp{\left( -\beta \sum_{{\overrightarrow{i}} \leftrightarrow \overrightarrow{i_{t}}} \sigma_{\overrightarrow{i}} \right)}}$
+    \item Generate a bernaulti disrtributed random variable $v$ with probability of success as $w_{+}$. If $v$ is True, set the spin as $\sigma_{\overrightarrow{i_{t}}} = 1$ else set it as $\sigma_{\overrightarrow{i_{t}}} = -1$ and store $\sigma_{n} = \sigma_{\overrightarrow{i_{t}}}$
+    \item Compute the updated magnetization as $M_k = M_{k - 1} - \sigma_o + \sigma_n$ and append it. Here $k$ is the iteration index.
+    \item Increment $k$ by $1$ and repeat step 3,4,5,6 till $N == k$.
+\end{enumerate}
+
+\noindent \textbf{Below is the algorithm implemented for Metropolis Hastings of N samples}
+\begin{enumerate}
+    \item Initialie the lattice with spins chosen randomly from discrete values $\{1, -1\}$
+    \item Calculte the initial magnetization as $M_{0}$ and store it. Set $k = 1$
+    \item Now find the position to update the spin. Position could be selected determinisitcally or randomly. Let the position to be updated is $\overrightarrow{i_{t}}$
+    \item Store the old spin $\sigma_{o} = \sigma_{\overrightarrow{i_{t}}}$. Filp this spin so $\sigma_{n}$ = Flip$(\sigma_{o})$. 
+	Now, compute $p_{acc} = \min\{1, \exp{\left( \beta \sum_{{\overrightarrow{i}} \leftrightarrow \overrightarrow{i_{t}}} \sigma_{\overrightarrow{i}} (\sigma_n - \sigma_o) \right)}\}$
+    \item Generate a bernaulti disrtributed random variable $v$ with probability of success as $p_{acc}$. If $v$ is True, set the spin as $\sigma_{\overrightarrow{i_{t}}} = \sigma_n$ else do $\sigma_n = \sigma_o$.
+    \item Compute the updated magnetization as $M_k = M_{k - 1} - \sigma_o + \sigma_n$ and append it. Here $k$ is the iteration index.
+    \item Increment $k$ by $1$ and repeat step 3,4,5,6 till $N == k$.
+\end{enumerate}
+
+\noindent To check the validity of the implementation, histograms of samples were generated. According to the Physics, if the value of $\beta$ is quite close to $0$ the magnetization should be close to $0$.
+Following are the histogram plots for samples generated from Gibbs Sampling \ref{fig:histograms_gibbs} and Metropolis Hastings \ref{fig:histograms_mh} with both Deterministic and Random Update Sequence.
+
+%Histograms ================================================================================================================================
+
+%Gibbs Sampling
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/Histogram_G_Deterministic _Sample Size_5000000_beta_0d0005_L_50.png}
+		\caption{N: 5,000,000\\Deterministic Update}
+	\end{subfigure}
+    \begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/Histogram_G_Deterministic _Sample Size_10000000_beta_0d0005_L_50.png}
+		\caption{N: 10,000,000\\Deterministic Update}
+	\end{subfigure}
+    \begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/Histogram_G_Deterministic _Sample Size_15000000_beta_0d0005_L_50.png}
+		\caption{N: 15,000,000\\Deterministic Update}
+	\end{subfigure}
+    \begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/Histogram_G_Deterministic _Sample Size_20000000_beta_0d0005_L_50.png}
+		\caption{N: 20,000,000\\Deterministic Update}
+	\end{subfigure}        
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/Histogram_G_Random _Sample Size_5000000_beta_0d0005_L_50.png}
+		\caption{N: 5,000,000\\Random Update}
+	\end{subfigure}
+    \begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/Histogram_G_Random _Sample Size_10000000_beta_0d0005_L_50.png}
+		\caption{N: 10,000,000\\Random Update}
+	\end{subfigure}
+    \begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/Histogram_G_Random _Sample Size_15000000_beta_0d0005_L_50.png}
+		\caption{N: 15,000,000\\Random Update}
+	\end{subfigure}
+    \begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/Histogram_G_Random _Sample Size_20000000_beta_0d0005_L_50.png}
+		\caption{N: 20,000,000\\Random Update}
+	\end{subfigure}
+    \caption{Histograms for magnetization samples generated using Gibbs Sampling}
+	\label{fig:histograms_gibbs}
+\end{figure}
+
+%MH Sampling
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/Histogram_MH_Deterministic _Sample Size_5000000_beta_0d0005_L_50.png}
+		\caption{N: 5,000,000\\Deterministic Update}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/Histogram_MH_Deterministic _Sample Size_10000000_beta_0d0005_L_50.png}
+		\caption{N: 10,000,000\\Deterministic Update}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/Histogram_MH_Deterministic _Sample Size_15000000_beta_0d0005_L_50.png}
+		\caption{N: 15,000,000\\Deterministic Update}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/Histogram_MH_Deterministic _Sample Size_20000000_beta_0d0005_L_50.png}
+		\caption{N: 20,000,000\\Deterministic Update}
+	\end{subfigure}
+    \begin{subfigure}{.22\textwidth}
+        \includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/Histogram_MH_Random _Sample Size_5000000_beta_0d0005_L_50.png}
+        \caption{N: 5,000,000\\Random Update}
+    \end{subfigure}
+    \begin{subfigure}{.22\textwidth}
+        \includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/Histogram_MH_Random _Sample Size_10000000_beta_0d0005_L_50.png}
+        \caption{N: 10,000,000\\Random Update}
+    \end{subfigure}
+    \begin{subfigure}{.22\textwidth}
+        \includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/Histogram_MH_Random _Sample Size_15000000_beta_0d0005_L_50.png}
+        \caption{N: 15,000,000\\Random Update}
+    \end{subfigure}
+    \begin{subfigure}{.22\textwidth}
+        \includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/Histogram_MH_Random _Sample Size_20000000_beta_0d0005_L_50.png}
+        \caption{N: 20,000,000\\Random Update}
+    \end{subfigure} 
+	\caption{Histograms for magnetization samples generated using Metropolis Hastings Sampling}
+	\label{fig:histograms_mh}
+\end{figure}
+
+%Histograms ================================================================================================================================
+
+\noindent Indeed we can see that the maximum points sampled are having magnetization in the bucket containing $0$.\\
+\noindent Now, we are well aware of the fact that Markov Chains are conditionally independent and not independent. Hence,
+Intergrated Auto-Correlation Time (IAT) is used to get statistical value each sample. I used the Python package \textbf{emcee} to compute IATs for the magnetization for different values of $N$ for both determinisitc and random update sequence.
+As IAT are known to be notoriously hard to compute, one way that I used to check the convergance of IAT values by parallely running $m$ $(m = 10)$ Monte Carlo simulation for same value of $N$ and same initial spins. For whatever minimum value of $N$ they converges
+would be the samples we should be generating to ensure that independent samples are generated from $\pi(\sigma)$. I ran this experiment on CIMS Linux Servers for $N$ starting from 1 million to 20 million with increment of 1 million. Multicore infrastructure of the machines was leveraged by parallelizing
+the code using the Python's joblib library.\\
+
+\noindent Below are the some of the graphs of IAT values for Gibbs Sampling using Random Update Sequence
+%MH Sampling
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/G_Random _Sample Size_1000000_beta_0d0005_L_50.png}
+		\caption{N: 1,000,000\\Random Update}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/G_Random _Sample Size_4000000_beta_0d0005_L_50.png}
+		\caption{N: 4,000,000\\Random Update}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/G_Random _Sample Size_11000000_beta_0d0005_L_50.png}
+		\caption{N: 11,000,000\\Random Update}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/G_Random _Sample Size_20000000_beta_0d0005_L_50.png}
+		\caption{N: 20,000,000\\Random Update}
+	\end{subfigure}
+	\caption{Graphs for IATs for Gibbs Sampling Algorithm using Random Update Sequence}
+	\label{fig:iat_gibbs_random}
+\end{figure}
+
+\noindent We can observe from the graphs \ref{fig:iat_gibbs_random} that IAT values are between 4000 to 9000 for 1 million samples and decreases with increase in the value of $N$. IAT stabalization between 4600 to 5600 starts at 11 million samples and remains in the same bound even for 20 million samples.
+To compare it with determinisitc update sequence below graphs were generated.
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/G_Deterministic _Sample Size_1000000_beta_0d0005_L_50.png}
+		\caption{N: 1,000,000\\Deterministic Update}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/G_Deterministic _Sample Size_4000000_beta_0d0005_L_50.png}
+		\caption{N: 4,000,000\\Deterministic Update}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/G_Deterministic _Sample Size_14000000_beta_0d0005_L_50.png}
+		\caption{N: 14,000,000\\Deterministic Update}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/G_Deterministic _Sample Size_20000000_beta_0d0005_L_50.png}
+		\caption{N: 20,000,000\\Deterministic Update}
+	\end{subfigure}
+	\caption{Graphs for IATs for Gibbs Sampling Algorithm using Deterministic Update Sequence}
+	\label{fig:iat_gibbs_determinisitc}
+\end{figure}
+\noindent Similarly here for determinisitc update sequence \ref{fig:iat_gibbs_determinisitc}, we can observe that the 
+IAT values are between 2000 to 3700 for 1 million samples and decreases with the increase in $N$. This time, IAT 
+stabalization between 2350 to 2700  starts at 14 million and remains in the 
+same bound even for 20 million samples.\\
+\par
+\noindent So IAT for random update sequence is almost twice as the IAT for determinisitc update sequence, hence it would 
+be wiser to choose determinisitc update sequence for generating samples using Gibbs Sampling Monte Carlo Algorithm.\\
+\par
+\noindent Same experiment was done for Metropolis Hastings Algorithm. Below are the graphs \ref{fig:iat_metropolis} generated fro IAT values for 
+differnet total samples count and different position update method.
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/MH_Random _Sample Size_1000000_beta_0d0005_L_50.png}
+		\caption{N: 1,000,000\\Random Update}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/MH_Random _Sample Size_5000000_beta_0d0005_L_50.png}
+		\caption{N: 5,000,000\\Random Update}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/MH_Random _Sample Size_8000000_beta_0d0005_L_50.png}
+		\caption{N: 8,000,000\\Random Update}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/MH_Random _Sample Size_20000000_beta_0d0005_L_50.png}
+		\caption{N: 20,000,000\\Random Update}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/MH_Deterministic _Sample Size_1000000_beta_0d0005_L_50.png}
+		\caption{N: 1,000,000\\Deterministic Update}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/MH_Deterministic _Sample Size_4000000_beta_0d0005_L_50.png}
+		\caption{N: 4,000,000\\Deterministic Update}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/MH_Deterministic _Sample Size_16000000_beta_0d0005_L_50.png}
+		\caption{N: 16,000,000\\Deterministic Update}
+	\end{subfigure}
+	\begin{subfigure}{.22\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Run_Nov_9/MH_Deterministic _Sample Size_20000000_beta_0d0005_L_50.png}
+		\caption{N: 20,000,000\\Deterministic Update}
+	\end{subfigure}
+    \caption{Graphs for IATs for Metropolis Hastings Sampling Algorithm}
+	\label{fig:iat_metropolis}
+\end{figure}
+
+Following are the graphs \ref{fig:iat_mean_var_normal} showing the variation of Meat of IAT and Standard Deviation of IAT for various values of N starting from 1 million samples to 20 million samples.
+We can easily observe that the IAT for Metropolis Hastings with determinisitc update sequence is converged even for 1 million sample count. Second, the standard deviation of IAT keeps on decreasing on increasing the value of N.
+And, the best method out of four is Metropolis Hasting with determinisitc update sequence then the performance on the basis for IAT value is same for Metropolis Hastings with random update sequenece as for Gibbs Sampling with determinisitc update sequence. And the
+largest mean value of IAT is for Gibbs Sampling with Random Update Sequence.
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.48\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Mean_IAT__Nmax_20000000_beta_0d0005_L_50.png}
+		\caption{Mean vs Samples Count}
+	\end{subfigure}
+	\begin{subfigure}{.48\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/StdDeviation_IAT__Nmax_20000000_beta_0d0005_L_50.png}
+		\caption{Standard deviations vs Samples Count}
+	\end{subfigure}
+    \caption{Means and standard deviations of IATs plotted for different values of N for all four methods}
+	\label{fig:iat_mean_var_normal}
+\end{figure}
+
+\par
+\noindent Now, it wouldn't be wrong to infer that the Metropolis Hastings Monte Carlo Algorithm with deterministic update is the best among all four above mentioned methods to generate samples from Ising Model on 2D lattice.\\
+\par
+\noindent Next, we have been asked to compute IAT for various values of temperature. As temperature is inversely proportional to $\beta$, we can check for various values of $\beta$ and draw conclusion appropriately.
+
+
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Variation_beta_Mean_IAT_G_Deterministic_L_30.png}
+		\caption{Mean\\Gibbs\\Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Variation_beta_Mean_IAT_G_Random_L_30.png}
+		\caption{Mean\\Gibbs\\Random}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Variation_beta_Mean_IAT_MH_Deterministic_L_30.png}
+		\caption{Mean\\Metropolis Hastings\\Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Variation_beta_Mean_IAT_MH_Random_L_30.png}
+		\caption{Mean\\Metropolis Hastings\\Random}
+	\end{subfigure}
+
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Variation_beta_StdDeviation_IAT_G_Deterministic_L_30.png}
+		\caption{Std Deviation\\Gibbs\\Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Variation_beta_StdDeviation_IAT_G_Random_L_30.png}
+		\caption{Std Deviation\\Gibbs\\Random}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Variation_beta_StdDeviation_IAT_MH_Deterministic_L_30.png}
+		\caption{Std Deviation\\Metropolis Hastings\\Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Variation_beta_StdDeviation_IAT_MH_Random_L_30.png}
+		\caption{Std Deviation\\Metropolis Hastings\\Random}
+	\end{subfigure}
+	\caption{Means and standard deviations of IATs plotted for different values of beta and for increasing values of N}
+	\label{fig:variation_with_betas}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/G_Deterministic_Sample Size_10000000_beta_0d1_L_30.png}
+		\caption{$\beta: 0.1$; G D}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/G_Random_Sample Size_10000000_beta_0d1_L_30.png}
+		\caption{$\beta: 0.1$; G R}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/MH_Deterministic_Sample Size_10000000_beta_0d1_L_30.png}
+		\caption{$\beta: 0.1$; MH D}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/MH_Random_Sample Size_10000000_beta_0d1_L_30.png}
+		\caption{$\beta: 0.1$; MH R}
+	\end{subfigure}
+
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/G_Deterministic_Sample Size_10000000_beta_0d2_L_30.png}
+		\caption{$\beta: 0.2$; G D}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/G_Random_Sample Size_10000000_beta_0d2_L_30.png}
+		\caption{$\beta: 0.2$; G R}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/MH_Deterministic_Sample Size_10000000_beta_0d2_L_30.png}
+		\caption{$\beta: 0.2$; MH D}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/MH_Random_Sample Size_10000000_beta_0d2_L_30.png}
+		\caption{$\beta: 0.2$; MH R}
+	\end{subfigure}
+
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/G_Deterministic_Sample Size_10000000_beta_0d3_L_30.png}
+		\caption{$\beta: 0.3$; G D}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/G_Random_Sample Size_10000000_beta_0d3_L_30.png}
+		\caption{$\beta: 0.3$; G R}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/MH_Deterministic_Sample Size_10000000_beta_0d3_L_30.png}
+		\caption{$\beta: 0.3$; MH D}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/MH_Random_Sample Size_10000000_beta_0d3_L_30.png}
+		\caption{$\beta: 0.3$; MH R}
+	\end{subfigure}
+
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/G_Deterministic_Sample Size_10000000_beta_0d4_L_30.png}
+		\caption{$\beta: 0.4$; G D}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/G_Random_Sample Size_10000000_beta_0d4_L_30.png}
+		\caption{$\beta: 0.4$; G R}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/MH_Deterministic_Sample Size_10000000_beta_0d4_L_30.png}
+		\caption{$\beta: 0.4$; MH D}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/MH_Random_Sample Size_10000000_beta_0d4_L_30.png}
+		\caption{$\beta: 0.4$; MH R}
+	\end{subfigure}
+	\caption{First half of figure showing IAT for different trajectory for different values of beta for all the methods. Here each column represent different method and going downwards in the image increment the value of beta.}
+	\label{fig:iat_betas_part1}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/G_Deterministic_Sample Size_10000000_beta_0d5_L_30.png}
+		\caption{$\beta: 0.5$; G D}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/G_Random_Sample Size_10000000_beta_0d5_L_30.png}
+		\caption{$\beta: 0.5$; G R}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/MH_Deterministic_Sample Size_10000000_beta_0d5_L_30.png}
+		\caption{$\beta: 0.5$; MH D}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/MH_Random_Sample Size_10000000_beta_0d5_L_30.png}
+		\caption{$\beta: 0.5$; MH R}
+	\end{subfigure}
+
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/G_Deterministic_Sample Size_10000000_beta_0d6_L_30.png}
+		\caption{$\beta: 0.6$; G D}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/G_Random_Sample Size_10000000_beta_0d6_L_30.png}
+		\caption{$\beta: 0.6$; G R}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/MH_Deterministic_Sample Size_10000000_beta_0d6_L_30.png}
+		\caption{$\beta: 0.6$; MH D}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/MH_Random_Sample Size_10000000_beta_0d6_L_30.png}
+		\caption{$\beta: 0.6$; MH R}
+	\end{subfigure}
+
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/G_Deterministic_Sample Size_10000000_beta_0d7_L_30.png}
+		\caption{$\beta: 0.7$; G D}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/G_Random_Sample Size_10000000_beta_0d7_L_30.png}
+		\caption{$\beta: 0.7$; G R}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/MH_Deterministic_Sample Size_10000000_beta_0d7_L_30.png}
+		\caption{$\beta: 0.7$; MH D}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/MH_Random_Sample Size_10000000_beta_0d7_L_30.png}
+		\caption{$\beta: 0.7$; MH R}
+	\end{subfigure}
+
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/G_Deterministic_Sample Size_10000000_beta_0d8_L_30.png}
+		\caption{$\beta: 0.8$; G D}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/G_Random_Sample Size_10000000_beta_0d8_L_30.png}
+		\caption{$\beta: 0.8$; G R}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/MH_Deterministic_Sample Size_10000000_beta_0d8_L_30.png}
+		\caption{$\beta: 0.8$; MH D}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/betaVar/MH_Random_Sample Size_10000000_beta_0d8_L_30.png}
+		\caption{$\beta: 0.8$; MH R}
+	\end{subfigure}
+	\caption{Second half of figure showing IAT for different trajectory for different values of beta for all the methods. Here each column represent different method and going downwards in the image increment the value of beta.}
+	\label{fig:iat_betas_gibbs_part2}
+\end{figure}
+
+
+I varied the values of $\beta$ starting from $0.1$ to $0.8$ for the different samples of sizes starting from 500,000 to 10,000,000 for a constant L $(L = 30)$.
+Following are the observations we can easily make from the graphs in \ref{fig:variation_with_betas},\ref{fig:iat_betas_part1},\ref{fig:iat_betas_gibbs_part2}:
+\begin{enumerate}
+	\item In \ref{fig:iat_mean_var_normal}, \ref{fig:variation_with_betas} we can see that as the value of $\beta$ is IAT values are taking 
+	more samples to converge. Most of them are not even converged even at 10 million samples even for Metropolis Hastings Deterministic Update Sequence Algorithm.
+	\item There is definitely some threashold value of $\beta$ above which IAT value increase drastically with the $\beta$ while below the threshold value of $\beta$, IAT 
+	is samller in magnitude.
+	\item From these graphs, it is easy to conclude that the value of IAT increase with $\beta$ for Gibbs Sampling Deterministic Update Sequence and Random Update 
+	Sequence and also for Metropolis Hastings Random Update Sequence. While there is one critical value of $\beta$ in Metropolis Hastings Deterministic Update 
+	Sequence that is having maximum IAT value. All other value of $\beta$ (larger and samller) are having IAT value lesser than the IAT at this critical value.
+\end{enumerate}
+
+Next, I varied the value of L starting from $L = 10$ to $L  = 120$ with N also increasing from 500,000 to 10,000,000 million samples and $\beta = 0.1$ as fixed. Results can be seen in the following graphs:
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Variation_L_Mean_IAT_G_Deterministic_beta_0d1.png}
+		\caption{Mean\\Gibbs\\Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Variation_L_Mean_IAT_G_Random_beta_0d1.png}
+		\caption{Mean\\Gibbs\\Random}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Variation_L_Mean_IAT_MH_Deterministic_beta_0d1.png}
+		\caption{Mean\\Metropolis Hastings\\Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Variation_L_Mean_IAT_MH_Random_beta_0d1.png}
+		\caption{Mean\\Metropolis Hastings\\Random}
+	\end{subfigure}
+
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Variation_L_StdDeviation_IAT_G_Deterministic_beta_0d1.png}
+		\caption{Std Deviation\\Gibbs\\Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Variation_L_StdDeviation_IAT_G_Random_beta_0d1.png}
+		\caption{Std Deviation\\Gibbs\\Random}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Variation_L_StdDeviation_IAT_MH_Deterministic_beta_0d1.png}
+		\caption{Std Deviation\\Metropolis Hastings\\Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.23\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Variation_L_StdDeviation_IAT_MH_Random_beta_0d1.png}
+		\caption{Std Deviation\\Metropolis Hastings\\Random}
+	\end{subfigure}
+	\caption{Means and standard deviations of IATs plotted for different values of L and for increasing values of N}
+	\label{fig:variation_with_ls}
+\end{figure}
+
+
+%For Ls
+%Gibbs
+%Deterministic
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Deterministic_Sample Size_10000000_beta_0d1_L_10.png}
+		\caption{L:10;\\Gibbs Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Deterministic_Sample Size_10000000_beta_0d1_L_20.png}
+		\caption{L:20;\\Gibbs Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Deterministic_Sample Size_10000000_beta_0d1_L_30.png}
+		\caption{L:30;\\Gibbs Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Deterministic_Sample Size_10000000_beta_0d1_L_40.png}
+		\caption{L:40;\\Gibbs Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Deterministic_Sample Size_10000000_beta_0d1_L_50.png}
+		\caption{L:50;\\Gibbs Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Deterministic_Sample Size_10000000_beta_0d1_L_60.png}
+		\caption{L:60;\\Gibbs Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Deterministic_Sample Size_10000000_beta_0d1_L_70.png}
+		\caption{L:70;\\Gibbs Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Deterministic_Sample Size_10000000_beta_0d1_L_80.png}
+		\caption{L:80;\\Gibbs Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Deterministic_Sample Size_10000000_beta_0d1_L_90.png}
+		\caption{L:90;\\Gibbs Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Deterministic_Sample Size_10000000_beta_0d1_L_100.png}
+		\caption{L:100;\\Gibbs Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Deterministic_Sample Size_10000000_beta_0d1_L_110.png}
+		\caption{L:110;\\Gibbs Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Deterministic_Sample Size_10000000_beta_0d1_L_120.png}
+		\caption{L:120;\\Gibbs Deterministic}
+	\end{subfigure}
+    \caption{Graphs for values of IAT for different values of L for Gibbs Sampling Deterministic Update}
+	\label{fig:iat_ls_gibbs_deterministic}
+\end{figure}
+
+% /Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Random_Sample Size_10000000_beta_0d1_L_10.png
+
+%Random
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Random_Sample Size_10000000_beta_0d1_L_10.png}
+		\caption{L:10;\\Gibbs Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Random_Sample Size_10000000_beta_0d1_L_20.png}
+		\caption{L:20;\\Gibbs Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Random_Sample Size_10000000_beta_0d1_L_30.png}
+		\caption{L:30;\\Gibbs Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Random_Sample Size_10000000_beta_0d1_L_40.png}
+		\caption{L:40;\\Gibbs Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Random_Sample Size_10000000_beta_0d1_L_50.png}
+		\caption{L:50;\\Gibbs Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Random_Sample Size_10000000_beta_0d1_L_60.png}
+		\caption{L:60;\\Gibbs Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Random_Sample Size_10000000_beta_0d1_L_70.png}
+		\caption{L:70;\\Gibbs Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Random_Sample Size_10000000_beta_0d1_L_80.png}
+		\caption{L:80;\\Gibbs Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Random_Sample Size_10000000_beta_0d1_L_90.png}
+		\caption{L:90;\\Gibbs Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Random_Sample Size_10000000_beta_0d1_L_100.png}
+		\caption{L:100;\\Gibbs Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Random_Sample Size_10000000_beta_0d1_L_110.png}
+		\caption{L:110;\\Gibbs Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/G_Random_Sample Size_10000000_beta_0d1_L_120.png}
+		\caption{L:120;\\Gibbs Random}
+	\end{subfigure}
+    \caption{Graphs for values of IAT for different values of L for Gibbs Sampling Random Update}
+\label{fig:iat_ls_gibbs_radnom}
+\end{figure}
+
+%Metropolis Hastings
+%Deterministic
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Deterministic_Sample Size_10000000_beta_0d1_L_10.png}
+		\caption{L:10;\\MH Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Deterministic_Sample Size_10000000_beta_0d1_L_20.png}
+		\caption{L:20;\\MH Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Deterministic_Sample Size_10000000_beta_0d1_L_30.png}
+		\caption{L:30;\\MH Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Deterministic_Sample Size_10000000_beta_0d1_L_40.png}
+		\caption{L:40;\\MH Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Deterministic_Sample Size_10000000_beta_0d1_L_50.png}
+		\caption{L:50;\\MH Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Deterministic_Sample Size_10000000_beta_0d1_L_60.png}
+		\caption{L:60;\\MH Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Deterministic_Sample Size_10000000_beta_0d1_L_70.png}
+		\caption{L:70;\\MH Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Deterministic_Sample Size_10000000_beta_0d1_L_80.png}
+		\caption{L:80;\\MH Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Deterministic_Sample Size_10000000_beta_0d1_L_90.png}
+		\caption{L:90;\\MH Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Deterministic_Sample Size_10000000_beta_0d1_L_100.png}
+		\caption{L:100;\\MH Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Deterministic_Sample Size_10000000_beta_0d1_L_110.png}
+		\caption{L:110;\\MH Deterministic}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Deterministic_Sample Size_10000000_beta_0d1_L_120.png}
+		\caption{L:120;\\MH Deterministic}
+	\end{subfigure}
+    \caption{Graphs for values of IAT for different values of L for Metropolis Hastings Sampling Deterministic Update}
+\label{fig:iat_ls_mh_deterministic}
+\end{figure}
+
+%Random
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Random_Sample Size_10000000_beta_0d1_L_10.png}
+		\caption{L:10;\\MH Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Random_Sample Size_10000000_beta_0d1_L_20.png}
+		\caption{L:20;\\MH Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Random_Sample Size_10000000_beta_0d1_L_30.png}
+		\caption{L:30;\\MH Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Random_Sample Size_10000000_beta_0d1_L_40.png}
+		\caption{L:40;\\MH Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Random_Sample Size_10000000_beta_0d1_L_50.png}
+		\caption{L:50;\\MH Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Random_Sample Size_10000000_beta_0d1_L_60.png}
+		\caption{L:60;\\MH Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Random_Sample Size_10000000_beta_0d1_L_70.png}
+		\caption{L:70;\\MH Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Random_Sample Size_10000000_beta_0d1_L_80.png}
+		\caption{L:80;\\MH Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Random_Sample Size_10000000_beta_0d1_L_90.png}
+		\caption{L:90;\\MH Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Random_Sample Size_10000000_beta_0d1_L_100.png}
+		\caption{L:100;\\MH Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Random_Sample Size_10000000_beta_0d1_L_110.png}
+		\caption{L:110;\\MH Random}
+	\end{subfigure}
+	\begin{subfigure}{.20\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/lsVar/MH_Random_Sample Size_10000000_beta_0d1_L_120.png}
+		\caption{L:120;\\MH Random}
+	\end{subfigure}
+    \caption{Graphs for values of IAT for different values of L for Metropolis Hastings Sampling Random Update}
+\label{fig:iat_ls_mh_radnom}
+\end{figure}
+
+Following are the observations, we can make from the graphs in 	\ref{fig:variation_with_ls}, \ref{fig:iat_ls_gibbs_deterministic}, \ref{fig:iat_ls_gibbs_radnom}
+,\ref{fig:iat_ls_mh_deterministic}, \ref{fig:iat_ls_mh_radnom}
+
+\begin{enumerate}
+	\item Even for incresing dimension of the Lattice, Metropolis Hastings with Deterministic Update Sequence is having the samllel standard deviation among all four possibilities.
+	\item We can easily infer from Gibs Samplign Deterministic Update graphs \ref{fig:iat_ls_gibbs_deterministic}, the IAT values, scales up quadratically with the change in value of L. For instance for (L, meanIAT) pair are: $(10,164)$, $(20,640)$, $(30,1400)$ and $(40, 2600)$.
+	\item Similar is the case for all the other three methods, the mean IAT sacles up quadratically with the change in value of L.
+\end{enumerate}
+\par
+\par
+\noindent Moving on to \textbf{Exercise 43}, this question asks us to implement Jarzynski Method for Ising model for both with resampling and without resampling.
+Here, the distributions to generate samples from are changing with the sample index.
+We are given 
+$$\pi_k = \pi^{\frac{k}{N}}$$
+Here, $N$ is the maximum sample count and $k$ is the index of the sample with are generating. This method can be imagined as the Metropolis Hastings Scheme at each index with different probability distribution.
+
+\noindent \textbf{Below is the algorithm implemented for Jarzynski Method of N samples}
+\begin{enumerate}
+    \item Initialie the lattice with spins chosen randomly from discrete values $\{1, -1\}$ and create $M$ copies of it.
+    \item Calculte the initial magnetization as $M_{0}$ and store it And itntial weights of M copies as $1/M$. Set $k = 1$
+    \item Now find the position to update the spin. Position is selected determinisitcally. Let the position to be updated is $\overrightarrow{i_{t}}$
+    \item Store the old spin $\sigma_{o} = \sigma_{\overrightarrow{i_{t}}}$. Filp this spin so $\sigma_{n}$ = Flip$(\sigma_{o})$. 
+	Now, compute $p_{acc} = \min\{1, \exp{\left(\frac{\beta k}{N} \times \sum_{{\overrightarrow{i}} \leftrightarrow \overrightarrow{i_{t}}} \sigma_{\overrightarrow{i}} (\sigma_n - \sigma_o) \right)}\}$
+    \item Generate a bernaulti disrtributed random variable $v$ with probability of success as $p_{acc}$. If $v$ is True, set the spin as $\sigma_{\overrightarrow{i_{t}}} = \sigma_n$ else do $\sigma_n = \sigma_o$.
+    \item Compute the change in Hamiltonian, new weights, and update the magnetization.
+    \item Increment $k$ by $1$ and repeat step 3,4,5,6 till $N == k$.
+    \item When $k == N$, get all the $M$ copies of last sample generated in each chain, get the magnetization and multiply them by appropriate weights.
+\end{enumerate}
+
+\noindent Below is the code snippet for the Algorithm for the initialization and update of spins:
+\begin{python}	
+def InitializeLattice(self, inputInitValues):
+	initializedValues = inputInitValues
+	self.initSpins[:] = initializedValues
+	self.SetInitialHamiltonian()
+	partialSum = np.sum(self.initSpins, 2)
+	partialSum = np.sum(partialSum, 1)
+	self.Magnetization[:, 0] = partialSum
+	self.Weights[:, 0] = self.Weights[:, 0] / np.sum(self.Weights[:, 0])
+	self.GetUpdateSequence()
+		
+def UpdateSpins(self, x_pos, y_pos, index, resample=False):
+	oldSpin = self.initSpins[:, x_pos, y_pos]
+	nSum, finalSpin = self.GinalFinalSpinToUpdate(x_pos, y_pos, index)
+	deltaSpinChange = finalSpin - oldSpin
+	self.initSpins[:, x_pos, y_pos] = finalSpin
+	delta_Hamiltonian = deltaSpinChange * nSum
+	self.hamiltonian[:, 0] = self.hamiltonian[:, 0] + delta_Hamiltonian
+	omega_num = np.exp((self.beta / self.N) * self.hamiltonian)
+	omega_num = np.reshape(omega_num, (omega_num.shape[0],))
+	self.Weights[:, index] = self.Weights[:, index - 1] * omega_num
+	self.Weights[:, index] = self.Weights[:, index] / np.sum(self.Weights[:, index])
+	self.Magnetization[:, index] = self.Magnetization[:, index - 1] + deltaSpinChange
+	if (resample == True):
+		self.DoMultinomialResampling(index)
+\end{python}
+
+Following is the acceptance probability:
+$$p_{acc}(X^k, Y^{k + 1}) = \min\left\{1,\exp{\left(\frac{\beta k}{N} \times \sum_{{\overrightarrow{i}} \leftrightarrow \overrightarrow{i_{t}}} \sigma_{\overrightarrow{i}} (\sigma_n - \sigma_o) \right)}\right\}$$
+Here, $\overrightarrow{i_{t}}$ is the position where we are checking for spin flip. And $\sigma_n$ is the spin after flip and $\sigma_o$ is the spin before flip.
+So, transition operator for the index $k + 1$ can be written as
+$$\tau_{k + 1} f = f(x) p_{rej} (x) + \int f(y) q(y|x) p_{acc}(x,y) dy$$
+here, $p_{rej}(x) = \int (1 - p_{acc}(x,z) (dz | x))$ and y is the spin at $\overrightarrow{i_{t}}$ after the flip and x is before the filp.
+
+$$\tau_{k + 1} f = f(x) p_{rej} (x) + \int f(y) q(y|x) \min\left\{1,\exp{\left(\frac{\beta k}{N} \times \sum_{{\overrightarrow{i}} \leftrightarrow \overrightarrow{i_{t}}} \sigma_{\overrightarrow{i}} (y - x) \right)}\right\} dy$$
+
+\noindent Below is the code snippet resampling of the samples using numpy choice function.
+\begin{python}
+def DoMultinomialResampling(self, index):
+	out = np.random.choice(self.M, self.M, replace=True, p=self.Weights[:, index])
+	newWeights = np.ones((self.M, ))
+	newSpins = self.initSpins[out, :, :]
+	newHamiltonin = self.hamiltonian[out, :]
+	newMagnetization = self.Magnetization[out, index]
+	newWeights = newWeights / self.M
+	self.initSpins = newSpins
+	self.hamiltonian = newHamiltonin
+	self.Magnetization[:, index] = newMagnetization
+	self.Weights[:, index] = newWeights
+	return
+\end{python}
+
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/H/Jarzynski_MeanPlot_no_resampling_from_100000_to_1000000.png}
+		\caption{Mean vs N}
+	\end{subfigure}
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/H/Jarzynski_VariancePlot_no_resampling_from_100000_to_1000000.png}
+		\caption{Standard deviations vs N}
+	\end{subfigure}
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/H/Jarzynski_TimePlot_no_resampling_from_100000_to_1000000.png}
+		\caption{Time taken vs N}
+	\end{subfigure}	
+    \caption{Means, standard deviations and time taken without resampling for Jarzynski Method for $\beta = 0.2$, $L = 20$ and $M = 1000$}
+	\label{fig:jarzynski_no_resampling}
+\end{figure}
+
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/H/Jarzynski_MeanPlot_resampling_from_100000_to_1000000.png}
+		\caption{Mean vs N}
+	\end{subfigure}
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/H/Jarzynski_VariancePlot_resampling_from_100000_to_1000000.png}
+		\caption{Standard deviations vs N}
+	\end{subfigure}
+	\begin{subfigure}{.30\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/H/Jarzynski_TimePlot_resampling_from_100000_to_1000000.png}
+		\caption{Time taken vs N}
+	\end{subfigure}	
+    \caption{Means, standard deviations and time taken with resampling for Jarzynski Method for $\beta = 0.2$, $L = 20$ and $M = 1000$}
+	\label{fig:jarzynski_resampling}
+\end{figure}
+
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/no_Resampling/J_D _noR_N_100000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 10000}
+	\end{subfigure}
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/no_Resampling/J_D _noR_N_200000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 20000}
+	\end{subfigure}
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/no_Resampling/J_D _noR_N_300000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 30000}
+	\end{subfigure}	
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/no_Resampling/J_D _noR_N_400000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 40000}
+	\end{subfigure}	
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/no_Resampling/J_D _noR_N_500000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 50000}
+	\end{subfigure}	
+
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/no_Resampling/J_D _noR_N_600000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 60000}
+	\end{subfigure}
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/no_Resampling/J_D _noR_N_700000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 70000}
+	\end{subfigure}
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/no_Resampling/J_D _noR_N_800000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 80000}
+	\end{subfigure}	
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/no_Resampling/J_D _noR_N_900000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 90000}
+	\end{subfigure}	
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/no_Resampling/J_D _noR_N_1000000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 100000}
+	\end{subfigure}	
+	\caption{Histograms Jarzynski Method for increasing N without Resampling}
+	\label{fig:jarzynski_hist_no_resampling}
+\end{figure}
+
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/resampling/J_D _R_N_100000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 10000}
+	\end{subfigure}
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/resampling/J_D _R_N_200000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 20000}
+	\end{subfigure}
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/resampling/J_D _R_N_300000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 30000}
+	\end{subfigure}	
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/resampling/J_D _R_N_400000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 40000}
+	\end{subfigure}	
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/resampling/J_D _R_N_500000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 50000}
+	\end{subfigure}	
+
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/resampling/J_D _R_N_600000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 60000}
+	\end{subfigure}
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/resampling/J_D _R_N_700000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 70000}
+	\end{subfigure}
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/resampling/J_D _R_N_800000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 80000}
+	\end{subfigure}	
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/resampling/J_D _R_N_900000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 90000}
+	\end{subfigure}	
+	\begin{subfigure}{.18\textwidth}
+		\includegraphics[width=\textwidth, scale=1]{/Users/utkarsh/NYU/Monte Carlo Methods/Homeworks/homework4/MCMC/Report_Images/Run_H/resampling/J_D _R_N_1000000_beta_0d2_L_20_M_1000.png}
+		\caption{N: 100000}
+	\end{subfigure}	
+	\caption{Histograms Jarzynski Method for increasing N with Resampling}
+	\label{fig:jarzynski_hist_resampling}
+\end{figure}
+
+\noindent We know that the magnetization for $\beta = 0.2$ is not zero. Hence, the Jarzynski Method with resampling \ref{fig:jarzynski_hist_resampling} is much more closer to the reality than without 
+resampling \ref{fig:jarzynski_hist_no_resampling}. Also, on increasing the value of $N$ and $M$, Jarzynski method without resampling is going will converge to correct value of magnetization. It is just resampling keeps samples with more weights and move ahead.
+\par
+\noindent From the graphs in \ref{fig:jarzynski_no_resampling} and \ref{fig:jarzynski_resampling} variance increases with both $N$ while incase of resampling variance almost stays the same for the increasing value of $N$. 
+Moreover the standard deviation with resampling is samller as compared to standard deviation without resampling.Considering 
+the time taken by the estimator as the measure of effort we can see that time taken with resampling is almost twice the time taken without resampling but it increases linearly $O(N)$.
+Hence, for larger values of $N$ with resampling would only take linearly twice the time which shouldn't be problem.
+\par
+\noindent Comparing between Jarzynski Method with the Gibbs and Metropolis Hasting Algorithm, can be done by comparing the variance of the estimator for same values of $beta$ and $L$. For Gibbs and Metropolis Hastings variance can be computed as the variance of M independent trajectory each of size N. For various values of N, these estimates can 
+be computed and analyzed for the bettwe performing model.
+
+
+
+
+
+
+
+
+\end{document}

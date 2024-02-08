@@ -1,0 +1,2 @@
+This python script has the following dependencies: numpy, pyplot in matplotlib, time. 
+The folder contains a Report and few python files. File JarzynskiMCMC.py and MCMC.py contains impelemntation of these algorithms, while Jarzynski_run.py, MCMC_script.py, MCMC_script_betas.py, MCMC_script_Ls.py are used to run these model.
